@@ -13,6 +13,7 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.maptutorial.misc.CameraAndViewport
+import com.example.maptutorial.misc.Shapes
 import com.example.maptutorial.misc.TypeAndStyle
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -24,11 +25,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback,GoogleMap.OnMarkerDragListener {
+class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private lateinit var mMap: GoogleMap
     private val typeAndStyle by lazy { TypeAndStyle() }
     private val cameraAndViewport by lazy {CameraAndViewport()}
+    private var start = LatLng(39.92227736063888, 32.84759116750344)
+    private var target = LatLng(37.90388307574215, 32.51564981785679)
+
+    private val shapes by lazy { Shapes() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_maps)
@@ -50,19 +56,23 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,GoogleMap.OnMarkerD
         return true
     }
 
-    override fun onMapReady(googleMap: GoogleMap) {
+    override  fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
         // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
 
-        val marker =  mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney")
+
+        val marker =  mMap.addMarker(MarkerOptions().position(start).title("Marker in Sydney")
                 .draggable(true)
-                .position(sydney)
-                .icon(fromVectorToMap(R.drawable.ic_launcher_background, Color.parseColor("#00d176")))
-        )
+                .position(start))
+
+
+        val marker2 = mMap.addMarker(MarkerOptions().position(target).title("Target")
+                .position(target))
+
         marker.tag="Restaurant"
-        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraAndViewport.losAngeles))
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(start,10f))
         mMap.uiSettings.apply {
             isZoomControlsEnabled = true
             isIndoorLevelPickerEnabled = true
@@ -71,17 +81,20 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,GoogleMap.OnMarkerD
         }
         typeAndStyle.setMapStyle(mMap,context = this)
         lifecycleScope.launch{
-            delay(2000L)
-            mMap.moveCamera(CameraUpdateFactory.zoomBy(3f))
-
+            shapes.addPolyline(mMap)
         }
+
+        //shapes.addCircle(mMap)
+        //shapes.addPolygon(mMap)
+
     }
 
+
+
+
     private fun fromVectorToMap(id : Int , color: Int) : BitmapDescriptor{
-        val vectorDrawable : Drawable? = ResourcesCompat.getDrawable(resources,id,null)
-        if(vectorDrawable == null){
-            return BitmapDescriptorFactory.defaultMarker()
-        }
+        val vectorDrawable : Drawable = ResourcesCompat.getDrawable(resources,id,null)
+                ?: return BitmapDescriptorFactory.defaultMarker()
         val bitmap = Bitmap.createBitmap(
                 vectorDrawable.intrinsicWidth,
                 vectorDrawable.intrinsicHeight,
@@ -94,16 +107,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback,GoogleMap.OnMarkerD
         return BitmapDescriptorFactory.fromBitmap(bitmap)
     }
 
-    override fun onMarkerDragStart(p0: Marker?) {
-       Log.d("Drag","start")
-    }
 
-    override fun onMarkerDrag(p0: Marker?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun onMarkerDragEnd(p0: Marker?) {
-        TODO("Not yet implemented")
-    }
 
 }
